@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>دوربین - عکس و فیلم</title>
+  <style>
+    video, canvas {
+      max-width: 100%;
+      border: 2px solid #444;
+      border-radius: 10px;
+      margin: 10px 0;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body dir="rtl" style="text-align: center; font-family: sans-serif">
+  <h2>باز کردن دوربین، عکس و فیلم‌برداری</h2>
+
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <br>
+
+  <button onclick="takePhoto()">📸 عکس بگیر</button>
+  <a id="downloadPhoto" style="display:none;">📥 دانلود عکس</a>
+  <br><br>
+
+  <button onclick="startRecording()">🎥 شروع ضبط</button>
+  <button onclick="stopRecording()">⏹ توقف ضبط</button>
+  <a id="downloadVideo" style="display:none;">📥 دانلود ویدیو</a>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const downloadPhoto = document.getElementById('downloadPhoto');
+    const downloadVideo = document.getElementById('downloadVideo');
+
+    let stream;
+    let mediaRecorder;
+    let chunks = [];
+
+    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(s => {
+        stream = s;
+        video.srcObject = stream;
+      }).catch(err => {
+        alert('دسترسی به دوربین رد شد ❌');
+        console.error(err);
+      });
+
+    function takePhoto() {
+      canvas.style.display = 'block';
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        downloadPhoto.href = url;
+        downloadPhoto.download = 'photo.jpg';
+        downloadPhoto.textContent = '📥 دانلود عکس';
+        downloadPhoto.style.display = 'inline';
+      }, 'image/jpeg');
+    }
+
+    function startRecording() {
+      chunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+      mediaRecorder.onstop = e => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        downloadVideo.href = url;
+        downloadVideo.download = 'video.webm';
+        downloadVideo.textContent = '📥 دانلود ویدیو';
+        downloadVideo.style.display = 'inline';
+      };
+      mediaRecorder.start();
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+    }
+  </script>
+</body>
+</html>
